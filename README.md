@@ -70,17 +70,34 @@ All skills use progressive disclosure (0 token overhead until invoked):
 
 ## 🚀 Installation & Usage
 
-### Option 1: Global Installation (Recommended)
-Clone this repository directly into your Antigravity global plugins directory:
+### Method 1: Using the Antigravity CLI (Recommended)
+Clone the repository and install it using the native Antigravity plugin manager:
+
+```bash
+git clone https://github.com/enielrodriguez/antigravity-sdlc-pack.git
+agy plugin install ./antigravity-sdlc-pack
+```
+
+The CLI validates all frontmatter, rules, and hook schemas before deploying to your global configuration (`~/.gemini/config/plugins/`).
+
+Verify installation at any time:
+```bash
+agy plugin list
+```
+
+---
+
+### Method 2: Direct Global Clone (Zero-Step Auto-Discovery)
+Alternatively, clone directly into Antigravity's global plugins directory. Antigravity will auto-discover the bundle on startup:
 
 ```bash
 git clone https://github.com/enielrodriguez/antigravity-sdlc-pack.git ~/.gemini/config/plugins/antigravity-sdlc-pack
 ```
 
-Antigravity automatically discovers and activates all rules, hooks, and skills across all your projects.
+---
 
-### Option 2: Project-Scoped Installation
-To bind this suite to a specific repository for team-wide sharing:
+### Method 3: Project-Scoped Installation (Team Sharing)
+To commit this suite directly to a specific repository for team-wide sharing without requiring global setup:
 
 ```bash
 git clone https://github.com/enielrodriguez/antigravity-sdlc-pack.git <repo-root>/.agents/plugins/antigravity-sdlc-pack
@@ -88,11 +105,30 @@ git clone https://github.com/enielrodriguez/antigravity-sdlc-pack.git <repo-root
 
 ---
 
-## 🛠 Updating
+## 🛠 Management & Updates
 
-To pull the latest updates to rules and skills:
+### Managing the Plugin
+You can toggle or inspect the pack using native `agy` commands:
 
 ```bash
+# Temporarily disable all SDLC rules and skills without deleting:
+agy plugin disable antigravity-sdlc-pack
+
+# Re-enable the suite:
+agy plugin enable antigravity-sdlc-pack
+
+# Verify manifest and schema integrity:
+agy plugin validate ~/.gemini/config/plugins/antigravity-sdlc-pack
+```
+
+### Updating to the Latest Version
+Pull updates from the repository and re-install:
+
+```bash
+cd /path/to/antigravity-sdlc-pack
+git pull origin main
+agy plugin install .
+```
 cd ~/.gemini/config/plugins/antigravity-sdlc-pack
 git pull origin main
 ```
