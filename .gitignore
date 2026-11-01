@@ -1,0 +1,9 @@
+# System & Environment
+.DS_Store
+Thumbs.db
+*.log
+*.tmp
+
+# Temporary agent workspaces
+.scratch/
+scratch/
