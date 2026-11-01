@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 -c 'import sys, json, re; data=json.load(sys.stdin) if not sys.stdin.isatty() else {}; cmd=data.get(\"toolCall\",{}).get(\"args\",{}).get(\"CommandLine\",\"\").strip(); patterns=[r\"rm\\s+-[a-zA-Z]*r[a-zA-Z]*\\s+(?:/|~|\\$HOME)(?:\\s|$)\", r\":\\(\\)\\s*\\{\\s*:\\s*\\|\\s*:\\s*&\\s*\\}\\s*;\\s*:\", r\"git\\s+push\\s+.*(?:-f|--force).*(?:\\bmain\\b|\\bmaster\\b)\"]; match=next((p for p in patterns if re.search(p, cmd)), None); sys.stdout.write(json.dumps({\"decision\": \"deny\", \"reason\": f\"Blocked critical safety violation: command matches safety pattern {match}\"} if match else {\"decision\": \"allow\"}))'",
+            "command": "python3 -c 'import sys, json, re; data=json.load(sys.stdin) if not sys.stdin.isatty() else {}; cmd=data.get(\"toolCall\",{}).get(\"args\",{}).get(\"CommandLine\",\"\").strip(); patterns=[r\"rm\\s+-[a-zA-Z]*r[a-zA-Z]*\\s+(?:/(?:\\*)?|(?:~|\\$HOME)(?:/\\*)?)(?:\\s|$)\", r\":\\(\\)\\s*\\{\\s*:\\s*\\|\\s*:\\s*&\\s*\\}\\s*;\\s*:\", r\"git\\s+push\\s+.*(?:-f|--force).*(?:\\bmain\\b|\\bmaster\\b)\"]; match=next((p for p in patterns if re.search(p, cmd)), None); sys.stdout.write(json.dumps({\"decision\": \"deny\", \"reason\": f\"Blocked critical safety violation: command matches safety pattern {match}\"} if match else {\"decision\": \"allow\"}))'",
             "timeout": 10
           }
         ]
