@@ -71,7 +71,7 @@ All skills use progressive disclosure (0 token overhead until invoked):
 ## 🚀 Installation & Multi-Platform Sync
 
 ### Universal One-Command Sync (Antigravity + Claude Code + GitHub Copilot)
-If you use multiple AI coding tools, run the universal sync script to connect all three platforms to this single source of truth in one command:
+The sync script automatically probes your environment and **only configures tools that are actually installed** on your machine (preventing unwanted dotfiles from being created):
 
 **On Linux / macOS / WSL:**
 ```bash
@@ -87,7 +87,14 @@ cd antigravity-sdlc-pack
 .\scripts\sync-global-platforms.ps1
 ```
 
-This single command wires:
+#### Sync Script Options:
+* Default: Auto-detects installed platforms and configures active ones.
+* `-a`, `--all`: Force configuration for all platforms regardless of detection.
+* `--antigravity`: Configure Google Antigravity only.
+* `--claude`: Configure Anthropic Claude Code only.
+* `--copilot`: Configure GitHub Copilot only.
+
+When detected, this wires:
 * **Google Antigravity**: Registers and installs the plugin via `agy plugin install`.
 * **Anthropic Claude Code**: Links `~/.claude/CLAUDE.md` to rules and `~/.claude/skills` to all 8 skills (also available as `/slash-commands`).
 * **GitHub Copilot**: Links `~/.copilot/copilot-instructions.md` to rules and `~/.copilot/skills` to all 8 skills.
