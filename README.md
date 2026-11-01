@@ -68,17 +68,39 @@ All skills use progressive disclosure (0 token overhead until invoked):
 
 ---
 
-## 🚀 Installation & Usage
+## 🚀 Installation & Multi-Platform Sync
 
-### Method 1: Using the Antigravity CLI (Recommended)
-Clone the repository and install it using the native Antigravity plugin manager:
+### Universal One-Command Sync (Antigravity + Claude Code + GitHub Copilot)
+If you use multiple AI coding tools, run the universal sync script to connect all three platforms to this single source of truth in one command:
+
+**On Linux / macOS / WSL:**
+```bash
+git clone https://github.com/enielrodriguez/antigravity-sdlc-pack.git
+cd antigravity-sdlc-pack
+./scripts/sync-global-platforms.sh
+```
+
+**On Windows (PowerShell):**
+```powershell
+git clone https://github.com/enielrodriguez/antigravity-sdlc-pack.git
+cd antigravity-sdlc-pack
+.\scripts\sync-global-platforms.ps1
+```
+
+This single command wires:
+* **Google Antigravity**: Registers and installs the plugin via `agy plugin install`.
+* **Anthropic Claude Code**: Links `~/.claude/CLAUDE.md` to rules and `~/.claude/skills` to all 8 skills (also available as `/slash-commands`).
+* **GitHub Copilot**: Links `~/.copilot/copilot-instructions.md` to rules and `~/.copilot/skills` to all 8 skills.
+
+---
+
+### Alternative: Standalone Antigravity Plugin Installation
+If you only use Google Antigravity:
 
 ```bash
 git clone https://github.com/enielrodriguez/antigravity-sdlc-pack.git
 agy plugin install ./antigravity-sdlc-pack
 ```
-
-The CLI validates all frontmatter, rules, and hook schemas before deploying to your global configuration (`~/.gemini/config/plugins/`).
 
 Verify installation at any time:
 ```bash
@@ -87,17 +109,8 @@ agy plugin list
 
 ---
 
-### Method 2: Direct Global Clone (Zero-Step Auto-Discovery)
-Alternatively, clone directly into Antigravity's global plugins directory. Antigravity will auto-discover the bundle on startup:
-
-```bash
-git clone https://github.com/enielrodriguez/antigravity-sdlc-pack.git ~/.gemini/config/plugins/antigravity-sdlc-pack
-```
-
----
-
-### Method 3: Project-Scoped Installation (Team Sharing)
-To commit this suite directly to a specific repository for team-wide sharing without requiring global setup:
+### Project-Scoped Installation (Team Repository Sharing)
+To commit this suite directly into a shared team repository without requiring global machine setup:
 
 ```bash
 git clone https://github.com/enielrodriguez/antigravity-sdlc-pack.git <repo-root>/.agents/plugins/antigravity-sdlc-pack
@@ -122,15 +135,12 @@ agy plugin validate ~/.gemini/config/plugins/antigravity-sdlc-pack
 ```
 
 ### Updating to the Latest Version
-Pull updates from the repository and re-install:
+Pull updates from Git and re-run the sync script to update all platforms:
 
 ```bash
 cd /path/to/antigravity-sdlc-pack
 git pull origin main
-agy plugin install .
-```
-cd ~/.gemini/config/plugins/antigravity-sdlc-pack
-git pull origin main
+./scripts/sync-global-platforms.sh
 ```
 
 ---
