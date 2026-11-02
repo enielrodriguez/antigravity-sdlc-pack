@@ -14,14 +14,15 @@ show_help() {
   cat << EOF
 Usage: $(basename "$0") [OPTIONS]
 
-Syncs universal SDLC rules and skills from this repository to global AI coding tools.
-By default, it automatically detects which tools are installed on your system.
+Deploys the universal SDLC suite (rules and skills) to global AI coding tools.
+Uses clean managed copies to ensure deterministic updates, branch safety,
+and zero filesystem privilege issues.
 
 Options:
-  -a, --all          Force configuration for all platforms regardless of detection
-      --antigravity  Configure Google Antigravity only
-      --claude       Configure Anthropic Claude Code only
-      --copilot      Configure GitHub Copilot only
+  -a, --all          Force deployment to all platforms regardless of detection
+      --antigravity  Deploy to Google Antigravity only
+      --claude       Deploy to Anthropic Claude Code only
+      --copilot      Deploy to GitHub Copilot only
   -h, --help         Show this help message
 EOF
 }
@@ -59,23 +60,20 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-# If no specific target flag was supplied and --all was not passed, use auto-detection
+# If no specific target flag was supplied and --all was not passed, use fast auto-detection
 if [ "$SPECIFIC_TARGET" = false ] && [ "$FORCE_ALL" = false ]; then
-  # 1. Detect Google Antigravity
+  # 1. Antigravity: binary or dot-dir
   if command -v agy &>/dev/null || [ -d "${HOME}/.gemini" ]; then
     TARGET_AGY=true
   fi
 
-  # 2. Detect Claude Code
+  # 2. Claude Code: binary or dot-dir
   if command -v claude &>/dev/null || [ -d "${HOME}/.claude" ]; then
     TARGET_CLAUDE=true
   fi
 
-  # 3. Detect GitHub Copilot (binary, existing dot-dir, gh extension, or VS Code extension)
-  if command -v copilot &>/dev/null || \
-     [ -d "${HOME}/.copilot" ] || \
-     (command -v gh &>/dev/null && gh extension list 2>/dev/null | grep -qi copilot) || \
-     (command -v code &>/dev/null && code --list-extensions 2>/dev/null | grep -qi "github.copilot"); then
+  # 3. GitHub Copilot: unified dot-dir or copilot binary
+  if [ -d "${HOME}/.copilot" ] || command -v copilot &>/dev/null; then
     TARGET_COPILOT=true
   fi
 elif [ "$FORCE_ALL" = true ]; then
@@ -84,7 +82,7 @@ elif [ "$FORCE_ALL" = true ]; then
   TARGET_COPILOT=true
 fi
 
-echo "🚀 Syncing universal SDLC suite from: ${REPO_ROOT}"
+echo "🚀 Deploying universal SDLC suite from: ${REPO_ROOT}"
 echo ""
 
 # ---------------------------------------------------------------------------
@@ -92,7 +90,7 @@ echo ""
 # ---------------------------------------------------------------------------
 if [ "$TARGET_AGY" = true ]; then
   if command -v agy &>/dev/null; then
-    echo "🔹 [Google Antigravity] Registering plugin via agy CLI..."
+    echo "🔹 [Google Antigravity] Installing/Updating plugin package..."
     agy plugin install "${REPO_ROOT}"
   else
     echo "⚠️  [Google Antigravity] 'agy' CLI not found on PATH. Skipping Antigravity registration."
@@ -105,12 +103,21 @@ fi
 # 2. Anthropic Claude Code
 # ---------------------------------------------------------------------------
 if [ "$TARGET_CLAUDE" = true ]; then
-  echo "🔹 [Claude Code] Setting up global user environment (~/.claude)..."
+  echo "🔹 [Claude Code] Deploying suite to ~/.claude..."
   mkdir -p "${HOME}/.claude"
-  ln -sf "${REPO_ROOT}/rules/AGENTS.md" "${HOME}/.claude/CLAUDE.md"
-  ln -sfn "${REPO_ROOT}/skills" "${HOME}/.claude/skills"
-  echo "   ✔ Linked ~/.claude/CLAUDE.md -> rules/AGENTS.md"
-  echo "   ✔ Linked ~/.claude/skills -> skills/"
+  
+  # Deploy rules
+  [ -L "${HOME}/.claude/CLAUDE.md" ] && rm -f "${HOME}/.claude/CLAUDE.md"
+  cp -f "${REPO_ROOT}/rules/AGENTS.md" "${HOME}/.claude/CLAUDE.md"
+  
+  # Deploy skills (clean target to prevent stale orphans on update)
+  [ -L "${HOME}/.claude/skills" ] && rm -f "${HOME}/.claude/skills"
+  mkdir -p "${HOME}/.claude/skills"
+  rm -rf "${HOME}/.claude/skills"/*
+  cp -rf "${REPO_ROOT}/skills/"* "${HOME}/.claude/skills/"
+  
+  echo "   ✔ Deployed ~/.claude/CLAUDE.md"
+  echo "   ✔ Deployed ~/.claude/skills/ (8 skills)"
 else
   echo "⏭️  [Claude Code] Not detected on this machine. Skipping (use --all or --claude to force)."
 fi
@@ -119,15 +126,24 @@ fi
 # 3. GitHub Copilot
 # ---------------------------------------------------------------------------
 if [ "$TARGET_COPILOT" = true ]; then
-  echo "🔹 [GitHub Copilot] Setting up global user environment (~/.copilot)..."
+  echo "🔹 [GitHub Copilot] Deploying suite to ~/.copilot..."
   mkdir -p "${HOME}/.copilot"
-  ln -sf "${REPO_ROOT}/rules/AGENTS.md" "${HOME}/.copilot/copilot-instructions.md"
-  ln -sfn "${REPO_ROOT}/skills" "${HOME}/.copilot/skills"
-  echo "   ✔ Linked ~/.copilot/copilot-instructions.md -> rules/AGENTS.md"
-  echo "   ✔ Linked ~/.copilot/skills -> skills/"
+  
+  # Deploy rules
+  [ -L "${HOME}/.copilot/copilot-instructions.md" ] && rm -f "${HOME}/.copilot/copilot-instructions.md"
+  cp -f "${REPO_ROOT}/rules/AGENTS.md" "${HOME}/.copilot/copilot-instructions.md"
+  
+  # Deploy skills (clean target to prevent stale orphans on update)
+  [ -L "${HOME}/.copilot/skills" ] && rm -f "${HOME}/.copilot/skills"
+  mkdir -p "${HOME}/.copilot/skills"
+  rm -rf "${HOME}/.copilot/skills"/*
+  cp -rf "${REPO_ROOT}/skills/"* "${HOME}/.copilot/skills/"
+  
+  echo "   ✔ Deployed ~/.copilot/copilot-instructions.md"
+  echo "   ✔ Deployed ~/.copilot/skills/ (8 skills)"
 else
   echo "⏭️  [GitHub Copilot] Not detected on this machine. Skipping (use --all or --copilot to force)."
 fi
 
 echo ""
-echo "✨ Global synchronization finished."
+echo "✨ Global deployment finished."

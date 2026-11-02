@@ -94,10 +94,12 @@ cd antigravity-sdlc-pack
 * `--claude`: Configure Anthropic Claude Code only.
 * `--copilot`: Configure GitHub Copilot only.
 
-When detected, this wires:
-* **Google Antigravity**: Registers and installs the plugin via `agy plugin install`.
-* **Anthropic Claude Code**: Links `~/.claude/CLAUDE.md` to rules and `~/.claude/skills` to all 8 skills (also available as `/slash-commands`).
-* **GitHub Copilot**: Links `~/.copilot/copilot-instructions.md` to rules and `~/.copilot/skills` to all 8 skills.
+When detected, this deploys clean managed copies:
+* **Google Antigravity**: Registers and installs the plugin package via `agy plugin install`.
+* **Anthropic Claude Code**: Deploys `~/.claude/CLAUDE.md` and `~/.claude/skills/` (available autonomously and as `/slash-commands`).
+* **GitHub Copilot**: Deploys `~/.copilot/copilot-instructions.md` and `~/.copilot/skills/`.
+
+Clean deployment ensures deterministic updates across all three tools on `git pull`, branch safety, and requires zero Administrator privileges on Windows.
 
 ---
 

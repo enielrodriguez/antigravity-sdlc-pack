@@ -1,24 +1,24 @@
 <#
 .SYNOPSIS
-    Syncs universal SDLC rules and skills to global AI coding tools on Windows.
+    Deploys universal SDLC rules and skills to global AI coding tools on Windows.
     Fully compatible with Windows PowerShell 5.1 and PowerShell 7+.
 
 .DESCRIPTION
-    By default, it automatically detects which tools (Antigravity, Claude Code,
-    GitHub Copilot) are installed on your system and configures only active ones.
-    Uses NTFS Junctions and HardLinks for zero-privilege non-admin support.
+    Automatically detects which tools (Antigravity, Claude Code, GitHub Copilot)
+    are installed on your system and deploys clean copies. Clean copies ensure
+    deterministic updates, safe branching, and require zero Administrator privileges.
 
 .PARAMETER All
-    Force configuration for all platforms regardless of detection.
+    Force deployment to all platforms regardless of detection.
 
 .PARAMETER Antigravity
-    Configure Google Antigravity only.
+    Deploy to Google Antigravity only.
 
 .PARAMETER Claude
-    Configure Anthropic Claude Code only.
+    Deploy to Anthropic Claude Code only.
 
 .PARAMETER Copilot
-    Configure GitHub Copilot only.
+    Deploy to GitHub Copilot only.
 #>
 
 param(
@@ -31,55 +31,6 @@ param(
 $ErrorActionPreference = "Stop"
 $RepoRoot = Split-Path -Parent $PSScriptRoot
 
-# Helper: Create directory link (Junction requires zero admin privileges on NTFS)
-function Link-Directory {
-    param(
-        [Parameter(Mandatory = $true)][string]$LinkPath,
-        [Parameter(Mandatory = $true)][string]$TargetPath
-    )
-    if (Test-Path -LiteralPath $LinkPath) {
-        try {
-            [System.IO.Directory]::Delete($LinkPath, $false)
-        } catch {
-            Remove-Item -LiteralPath $LinkPath -Force -Recurse -ErrorAction SilentlyContinue
-        }
-    }
-    try {
-        # PS 5.1 & PS 7 compatible: -Value specifies target for Junction
-        New-Item -ItemType Junction -Path $LinkPath -Value $TargetPath -Force | Out-Null
-        Write-Host "   ✔ Linked directory $LinkPath -> $TargetPath"
-    } catch {
-        Write-Warning "Failed to create directory junction for $LinkPath. Falling back to folder copy."
-        Copy-Item -Path $TargetPath -Destination $LinkPath -Recurse -Force
-        Write-Host "   ✔ Copied directory $LinkPath (fallback)"
-    }
-}
-
-# Helper: Create file link (SymbolicLink -> HardLink -> Copy fallback)
-function Link-File {
-    param(
-        [Parameter(Mandatory = $true)][string]$LinkPath,
-        [Parameter(Mandatory = $true)][string]$TargetPath
-    )
-    if (Test-Path -LiteralPath $LinkPath) {
-        Remove-Item -LiteralPath $LinkPath -Force -ErrorAction SilentlyContinue
-    }
-    try {
-        # Requires Developer Mode or Admin on Windows
-        New-Item -ItemType SymbolicLink -Path $LinkPath -Value $TargetPath -Force -ErrorAction Stop | Out-Null
-        Write-Host "   ✔ Linked file $LinkPath"
-    } catch {
-        try {
-            # Hard link works on same NTFS volume without admin rights
-            New-Item -ItemType HardLink -Path $LinkPath -Value $TargetPath -Force -ErrorAction Stop | Out-Null
-            Write-Host "   ✔ Hardlinked file $LinkPath (non-admin fallback)"
-        } catch {
-            Copy-Item -LiteralPath $TargetPath -Destination $LinkPath -Force
-            Write-Host "   ✔ Copied file $LinkPath (fallback)"
-        }
-    }
-}
-
 # Determine target platforms
 $TargetAgy = $false
 $TargetClaude = $false
@@ -88,31 +39,21 @@ $TargetCopilot = $false
 $SpecificTarget = $Antigravity.IsPresent -or $Claude.IsPresent -or $Copilot.IsPresent
 
 if (-not $SpecificTarget -and -not $All) {
-    # 1. Detect Antigravity
+    # 1. Antigravity: binary or dot-dir
     $GeminiDir = Join-Path $env:USERPROFILE ".gemini"
     if ((Get-Command agy -ErrorAction SilentlyContinue) -or (Test-Path -LiteralPath $GeminiDir)) {
         $TargetAgy = $true
     }
 
-    # 2. Detect Claude Code
+    # 2. Claude Code: binary or dot-dir
     $ClaudeDir = Join-Path $env:USERPROFILE ".claude"
     if ((Get-Command claude -ErrorAction SilentlyContinue) -or (Test-Path -LiteralPath $ClaudeDir)) {
         $TargetClaude = $true
     }
 
-    # 3. Detect GitHub Copilot
+    # 3. GitHub Copilot: unified dot-dir or copilot binary
     $CopilotDir = Join-Path $env:USERPROFILE ".copilot"
-    $HasCopilotCli = [bool](Get-Command copilot -ErrorAction SilentlyContinue)
-    $HasCopilotDir = Test-Path -LiteralPath $CopilotDir
-    $HasCodeCopilot = $false
-    if (Get-Command code -ErrorAction SilentlyContinue) {
-        try {
-            $exts = & code --list-extensions 2>$null
-            if ($exts -match "github\.copilot") { $HasCodeCopilot = $true }
-        } catch {}
-    }
-
-    if ($HasCopilotCli -or $HasCopilotDir -or $HasCodeCopilot) {
+    if ((Get-Command copilot -ErrorAction SilentlyContinue) -or (Test-Path -LiteralPath $CopilotDir)) {
         $TargetCopilot = $true
     }
 } elseif ($All) {
@@ -125,14 +66,14 @@ if (-not $SpecificTarget -and -not $All) {
     $TargetCopilot = $Copilot.IsPresent
 }
 
-Write-Host "🚀 Syncing universal SDLC suite from: $RepoRoot`n"
+Write-Host "🚀 Deploying universal SDLC suite from: $RepoRoot`n"
 
 # ---------------------------------------------------------------------------
 # 1. Google Antigravity
 # ---------------------------------------------------------------------------
 if ($TargetAgy) {
     if (Get-Command agy -ErrorAction SilentlyContinue) {
-        Write-Host "🔹 [Google Antigravity] Registering plugin via agy CLI..."
+        Write-Host "🔹 [Google Antigravity] Installing/Updating plugin package..."
         & agy plugin install "$RepoRoot"
     } else {
         Write-Host "⚠️  [Google Antigravity] 'agy' CLI not found on PATH. Skipping Antigravity registration."
@@ -146,12 +87,28 @@ if ($TargetAgy) {
 # ---------------------------------------------------------------------------
 $ClaudeDir = Join-Path $env:USERPROFILE ".claude"
 if ($TargetClaude) {
-    Write-Host "🔹 [Claude Code] Setting up global user environment ($ClaudeDir)..."
+    Write-Host "🔹 [Claude Code] Deploying suite to $ClaudeDir..."
     if (-not (Test-Path -LiteralPath $ClaudeDir)) {
         New-Item -ItemType Directory -Path $ClaudeDir -Force | Out-Null
     }
-    Link-File -LinkPath (Join-Path $ClaudeDir "CLAUDE.md") -TargetPath (Join-Path $RepoRoot "rules\AGENTS.md")
-    Link-Directory -LinkPath (Join-Path $ClaudeDir "skills") -TargetPath (Join-Path $RepoRoot "skills")
+
+    # Deploy rules
+    $ClaudeRules = Join-Path $ClaudeDir "CLAUDE.md"
+    if (Test-Path -LiteralPath $ClaudeRules) {
+        Remove-Item -LiteralPath $ClaudeRules -Force -ErrorAction SilentlyContinue
+    }
+    Copy-Item -LiteralPath (Join-Path $RepoRoot "rules\AGENTS.md") -Destination $ClaudeRules -Force
+
+    # Deploy skills (clean destination to prevent stale orphans on update)
+    $ClaudeSkills = Join-Path $ClaudeDir "skills"
+    if (Test-Path -LiteralPath $ClaudeSkills) {
+        Remove-Item -LiteralPath $ClaudeSkills -Recurse -Force -ErrorAction SilentlyContinue
+    }
+    New-Item -ItemType Directory -Path $ClaudeSkills -Force | Out-Null
+    Copy-Item -Path (Join-Path $RepoRoot "skills\*") -Destination $ClaudeSkills -Recurse -Force
+
+    Write-Host "   ✔ Deployed $ClaudeRules"
+    Write-Host "   ✔ Deployed $ClaudeSkills (8 skills)"
 } else {
     Write-Host "⏭️  [Claude Code] Not detected on this machine. Skipping (use -All or -Claude to force)."
 }
@@ -161,14 +118,30 @@ if ($TargetClaude) {
 # ---------------------------------------------------------------------------
 $CopilotDir = Join-Path $env:USERPROFILE ".copilot"
 if ($TargetCopilot) {
-    Write-Host "🔹 [GitHub Copilot] Setting up global user environment ($CopilotDir)..."
+    Write-Host "🔹 [GitHub Copilot] Deploying suite to $CopilotDir..."
     if (-not (Test-Path -LiteralPath $CopilotDir)) {
         New-Item -ItemType Directory -Path $CopilotDir -Force | Out-Null
     }
-    Link-File -LinkPath (Join-Path $CopilotDir "copilot-instructions.md") -TargetPath (Join-Path $RepoRoot "rules\AGENTS.md")
-    Link-Directory -LinkPath (Join-Path $CopilotDir "skills") -TargetPath (Join-Path $RepoRoot "skills")
+
+    # Deploy rules
+    $CopilotRules = Join-Path $CopilotDir "copilot-instructions.md"
+    if (Test-Path -LiteralPath $CopilotRules) {
+        Remove-Item -LiteralPath $CopilotRules -Force -ErrorAction SilentlyContinue
+    }
+    Copy-Item -LiteralPath (Join-Path $RepoRoot "rules\AGENTS.md") -Destination $CopilotRules -Force
+
+    # Deploy skills (clean destination to prevent stale orphans on update)
+    $CopilotSkills = Join-Path $CopilotDir "skills"
+    if (Test-Path -LiteralPath $CopilotSkills) {
+        Remove-Item -LiteralPath $CopilotSkills -Recurse -Force -ErrorAction SilentlyContinue
+    }
+    New-Item -ItemType Directory -Path $CopilotSkills -Force | Out-Null
+    Copy-Item -Path (Join-Path $RepoRoot "skills\*") -Destination $CopilotSkills -Recurse -Force
+
+    Write-Host "   ✔ Deployed $CopilotRules"
+    Write-Host "   ✔ Deployed $CopilotSkills (8 skills)"
 } else {
     Write-Host "⏭️  [GitHub Copilot] Not detected on this machine. Skipping (use -All or -Copilot to force)."
 }
 
-Write-Host "`n✨ Global synchronization finished."
+Write-Host "`n✨ Global deployment finished."
