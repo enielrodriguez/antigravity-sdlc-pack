@@ -15,8 +15,10 @@ show_help() {
 Usage: $(basename "$0") [OPTIONS]
 
 Deploys the universal SDLC suite (rules and skills) to global AI coding tools.
-Uses clean managed copies to ensure deterministic updates, branch safety,
-and zero filesystem privilege issues.
+Features:
+  - Non-destructive: Existing instructions are automatically backed up (.bak.<timestamp>)
+  - Surgical: Only updates pack-owned skills; preserves your custom skills
+  - Zero-drift & Branch-safe: Managed copy ensures all tools update deterministically
 
 Options:
   -a, --all          Force deployment to all platforms regardless of detection
@@ -25,6 +27,49 @@ Options:
       --copilot      Deploy to GitHub Copilot only
   -h, --help         Show this help message
 EOF
+}
+
+# Helper: Deploy rules file safely with backup if destination differs
+deploy_rule_file() {
+  local src="$1"
+  local dest="$2"
+  local label="$3"
+
+  if [ -L "$dest" ]; then
+    rm -f "$dest"
+  elif [ -f "$dest" ]; then
+    if ! cmp -s "$src" "$dest"; then
+      local timestamp
+      timestamp=$(date +%Y%m%d_%H%M%S)
+      local bak="${dest}.bak.${timestamp}"
+      cp "$dest" "$bak"
+      echo "   ⚠️  Existing ${label} differed from pack standards."
+      echo "       Original safely backed up to: $(basename "$bak")"
+    fi
+  fi
+  cp -f "$src" "$dest"
+}
+
+# Helper: Deploy skills surgically without wiping user's other skills
+deploy_skills_surgically() {
+  local src_dir="$1"
+  local dest_dir="$2"
+
+  if [ -L "$dest_dir" ]; then
+    rm -f "$dest_dir"
+  fi
+  mkdir -p "$dest_dir"
+
+  local count=0
+  for skill_path in "${src_dir}"/*; do
+    [ -d "$skill_path" ] || continue
+    local skill_name
+    skill_name=$(basename "$skill_path")
+    rm -rf "${dest_dir}/${skill_name}"
+    cp -rf "$skill_path" "${dest_dir}/"
+    count=$((count + 1))
+  done
+  echo "   ✔ Surgically deployed ${count} SDLC skills (existing custom skills preserved)"
 }
 
 while [[ $# -gt 0 ]]; do
@@ -105,19 +150,8 @@ fi
 if [ "$TARGET_CLAUDE" = true ]; then
   echo "🔹 [Claude Code] Deploying suite to ~/.claude..."
   mkdir -p "${HOME}/.claude"
-  
-  # Deploy rules
-  [ -L "${HOME}/.claude/CLAUDE.md" ] && rm -f "${HOME}/.claude/CLAUDE.md"
-  cp -f "${REPO_ROOT}/rules/AGENTS.md" "${HOME}/.claude/CLAUDE.md"
-  
-  # Deploy skills (clean target to prevent stale orphans on update)
-  [ -L "${HOME}/.claude/skills" ] && rm -f "${HOME}/.claude/skills"
-  mkdir -p "${HOME}/.claude/skills"
-  rm -rf "${HOME}/.claude/skills"/*
-  cp -rf "${REPO_ROOT}/skills/"* "${HOME}/.claude/skills/"
-  
-  echo "   ✔ Deployed ~/.claude/CLAUDE.md"
-  echo "   ✔ Deployed ~/.claude/skills/ (8 skills)"
+  deploy_rule_file "${REPO_ROOT}/rules/AGENTS.md" "${HOME}/.claude/CLAUDE.md" "~/.claude/CLAUDE.md"
+  deploy_skills_surgically "${REPO_ROOT}/skills" "${HOME}/.claude/skills"
 else
   echo "⏭️  [Claude Code] Not detected on this machine. Skipping (use --all or --claude to force)."
 fi
@@ -128,19 +162,8 @@ fi
 if [ "$TARGET_COPILOT" = true ]; then
   echo "🔹 [GitHub Copilot] Deploying suite to ~/.copilot..."
   mkdir -p "${HOME}/.copilot"
-  
-  # Deploy rules
-  [ -L "${HOME}/.copilot/copilot-instructions.md" ] && rm -f "${HOME}/.copilot/copilot-instructions.md"
-  cp -f "${REPO_ROOT}/rules/AGENTS.md" "${HOME}/.copilot/copilot-instructions.md"
-  
-  # Deploy skills (clean target to prevent stale orphans on update)
-  [ -L "${HOME}/.copilot/skills" ] && rm -f "${HOME}/.copilot/skills"
-  mkdir -p "${HOME}/.copilot/skills"
-  rm -rf "${HOME}/.copilot/skills"/*
-  cp -rf "${REPO_ROOT}/skills/"* "${HOME}/.copilot/skills/"
-  
-  echo "   ✔ Deployed ~/.copilot/copilot-instructions.md"
-  echo "   ✔ Deployed ~/.copilot/skills/ (8 skills)"
+  deploy_rule_file "${REPO_ROOT}/rules/AGENTS.md" "${HOME}/.copilot/copilot-instructions.md" "~/.copilot/copilot-instructions.md"
+  deploy_skills_surgically "${REPO_ROOT}/skills" "${HOME}/.copilot/skills"
 else
   echo "⏭️  [GitHub Copilot] Not detected on this machine. Skipping (use --all or --copilot to force)."
 fi

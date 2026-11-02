@@ -5,8 +5,11 @@
 
 .DESCRIPTION
     Automatically detects which tools (Antigravity, Claude Code, GitHub Copilot)
-    are installed on your system and deploys clean copies. Clean copies ensure
-    deterministic updates, safe branching, and require zero Administrator privileges.
+    are installed on your system and deploys clean copies.
+    Features:
+      - Non-destructive: Existing instructions are automatically backed up (.bak.<timestamp>)
+      - Surgical: Only updates pack-owned skills; preserves your custom skills
+      - Zero Administrator privileges required
 
 .PARAMETER All
     Force deployment to all platforms regardless of detection.
@@ -30,6 +33,56 @@ param(
 
 $ErrorActionPreference = "Stop"
 $RepoRoot = Split-Path -Parent $PSScriptRoot
+
+# Helper: Deploy rules file safely with backup if destination differs
+function Deploy-RuleFile {
+    param(
+        [Parameter(Mandatory = $true)][string]$SourcePath,
+        [Parameter(Mandatory = $true)][string]$DestPath,
+        [Parameter(Mandatory = $true)][string]$Label
+    )
+
+    if (Test-Path -LiteralPath $DestPath) {
+        $SourceHash = (Get-FileHash -LiteralPath $SourcePath -Algorithm SHA256).Hash
+        $DestHash = (Get-FileHash -LiteralPath $DestPath -Algorithm SHA256).Hash
+
+        if ($SourceHash -ne $DestHash) {
+            $Timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
+            $BackupPath = "$DestPath.bak.$Timestamp"
+            Copy-Item -LiteralPath $DestPath -Destination $BackupPath -Force
+            Write-Host "   ⚠️  Existing $Label differed from pack standards." -ForegroundColor Yellow
+            Write-Host "       Original safely backed up to: $(Split-Path -Leaf $BackupPath)" -ForegroundColor Yellow
+        }
+        Remove-Item -LiteralPath $DestPath -Force -ErrorAction SilentlyContinue
+    }
+    Copy-Item -LiteralPath $SourcePath -Destination $DestPath -Force
+}
+
+# Helper: Deploy skills surgically without wiping user's other skills
+function Deploy-SkillsSurgically {
+    param(
+        [Parameter(Mandatory = $true)][string]$SourceSkillsDir,
+        [Parameter(Mandatory = $true)][string]$DestSkillsDir
+    )
+
+    if (-not (Test-Path -LiteralPath $DestSkillsDir)) {
+        New-Item -ItemType Directory -Path $DestSkillsDir -Force | Out-Null
+    }
+
+    $Count = 0
+    Get-ChildItem -LiteralPath $SourceSkillsDir -Directory | ForEach-Object {
+        $SkillName = $_.Name
+        $TargetSkillPath = Join-Path $DestSkillsDir $SkillName
+
+        if (Test-Path -LiteralPath $TargetSkillPath) {
+            Remove-Item -LiteralPath $TargetSkillPath -Recurse -Force -ErrorAction SilentlyContinue
+        }
+        Copy-Item -LiteralPath $_.FullName -Destination $TargetSkillPath -Recurse -Force
+        $Count++
+    }
+
+    Write-Host "   ✔ Surgically deployed $Count SDLC skills (existing custom skills preserved)"
+}
 
 # Determine target platforms
 $TargetAgy = $false
@@ -91,24 +144,8 @@ if ($TargetClaude) {
     if (-not (Test-Path -LiteralPath $ClaudeDir)) {
         New-Item -ItemType Directory -Path $ClaudeDir -Force | Out-Null
     }
-
-    # Deploy rules
-    $ClaudeRules = Join-Path $ClaudeDir "CLAUDE.md"
-    if (Test-Path -LiteralPath $ClaudeRules) {
-        Remove-Item -LiteralPath $ClaudeRules -Force -ErrorAction SilentlyContinue
-    }
-    Copy-Item -LiteralPath (Join-Path $RepoRoot "rules\AGENTS.md") -Destination $ClaudeRules -Force
-
-    # Deploy skills (clean destination to prevent stale orphans on update)
-    $ClaudeSkills = Join-Path $ClaudeDir "skills"
-    if (Test-Path -LiteralPath $ClaudeSkills) {
-        Remove-Item -LiteralPath $ClaudeSkills -Recurse -Force -ErrorAction SilentlyContinue
-    }
-    New-Item -ItemType Directory -Path $ClaudeSkills -Force | Out-Null
-    Copy-Item -Path (Join-Path $RepoRoot "skills\*") -Destination $ClaudeSkills -Recurse -Force
-
-    Write-Host "   ✔ Deployed $ClaudeRules"
-    Write-Host "   ✔ Deployed $ClaudeSkills (8 skills)"
+    Deploy-RuleFile -SourcePath (Join-Path $RepoRoot "rules\AGENTS.md") -DestPath (Join-Path $ClaudeDir "CLAUDE.md") -Label "CLAUDE.md"
+    Deploy-SkillsSurgically -SourceSkillsDir (Join-Path $RepoRoot "skills") -DestSkillsDir (Join-Path $ClaudeDir "skills")
 } else {
     Write-Host "⏭️  [Claude Code] Not detected on this machine. Skipping (use -All or -Claude to force)."
 }
@@ -122,24 +159,8 @@ if ($TargetCopilot) {
     if (-not (Test-Path -LiteralPath $CopilotDir)) {
         New-Item -ItemType Directory -Path $CopilotDir -Force | Out-Null
     }
-
-    # Deploy rules
-    $CopilotRules = Join-Path $CopilotDir "copilot-instructions.md"
-    if (Test-Path -LiteralPath $CopilotRules) {
-        Remove-Item -LiteralPath $CopilotRules -Force -ErrorAction SilentlyContinue
-    }
-    Copy-Item -LiteralPath (Join-Path $RepoRoot "rules\AGENTS.md") -Destination $CopilotRules -Force
-
-    # Deploy skills (clean destination to prevent stale orphans on update)
-    $CopilotSkills = Join-Path $CopilotDir "skills"
-    if (Test-Path -LiteralPath $CopilotSkills) {
-        Remove-Item -LiteralPath $CopilotSkills -Recurse -Force -ErrorAction SilentlyContinue
-    }
-    New-Item -ItemType Directory -Path $CopilotSkills -Force | Out-Null
-    Copy-Item -Path (Join-Path $RepoRoot "skills\*") -Destination $CopilotSkills -Recurse -Force
-
-    Write-Host "   ✔ Deployed $CopilotRules"
-    Write-Host "   ✔ Deployed $CopilotSkills (8 skills)"
+    Deploy-RuleFile -SourcePath (Join-Path $RepoRoot "rules\AGENTS.md") -DestPath (Join-Path $CopilotDir "copilot-instructions.md") -Label "copilot-instructions.md"
+    Deploy-SkillsSurgically -SourceSkillsDir (Join-Path $RepoRoot "skills") -DestSkillsDir (Join-Path $CopilotDir "skills")
 } else {
     Write-Host "⏭️  [GitHub Copilot] Not detected on this machine. Skipping (use -All or -Copilot to force)."
 }
