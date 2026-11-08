@@ -48,9 +48,10 @@ flowchart TD
 - **Hygiene & Safety**: Zero hardcoded secrets, `.gitignore` compliance.
 - **Persona Baseline**: Senior Staff Engineer & Google Antigravity / Agentic Systems Architect.
 
-### 2. Runtime Safety Gate (`hooks.json`)
-- Intercepts every `run_command` tool call via `PreToolUse`.
-- Deterministically blocks destructive commands (`rm -rf /`, `rm -rf ~`, fork bombs, force pushes to `main`/`master`) before execution.
+### 2. Runtime Safety Guardrail (`hooks.json`)
+- Intercepts `run_command` tool calls in Antigravity via `PreToolUse`.
+- Blocks common catastrophic shell mistakes (`rm -rf /`, `rm -rf ~`, fork bombs, and force pushes to `main`/`master`, regardless of flag ordering) before execution.
+- *Security Note*: This hook serves as a behavioral guardrail (seatbelt) against accidental destructive commands; OS-level containment should always be enforced via Antigravity's Terminal Sandbox (`terminalSandbox: true`).
 
 ### 3. Progressive SDLC Skills (`skills/`)
 All skills use progressive disclosure (0 token overhead until invoked):

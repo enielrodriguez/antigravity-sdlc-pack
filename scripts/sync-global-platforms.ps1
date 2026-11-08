@@ -128,6 +128,9 @@ if ($TargetAgy) {
     if (Get-Command agy -ErrorAction SilentlyContinue) {
         Write-Host "🔹 [Google Antigravity] Installing/Updating plugin package..."
         & agy plugin install "$RepoRoot"
+        if ($LASTEXITCODE -ne 0) {
+            throw "agy plugin install failed with exit code $LASTEXITCODE"
+        }
     } else {
         Write-Host "⚠️  [Google Antigravity] 'agy' CLI not found on PATH. Skipping Antigravity registration."
     }

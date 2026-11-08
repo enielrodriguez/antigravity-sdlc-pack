@@ -6,7 +6,10 @@ description: Use when asked to review code, audit changes, or critique a pull re
 # Automated Code Review Workflow
 
 ## 1. Scope & Diff Analysis
-Inspect the full diff using `git diff HEAD~1` (or comparison target).
+Determine the review target first using `git status` and `git branch --show-current`:
+- **Uncommitted working tree changes**: Run `git diff HEAD` (and inspect untracked files).
+- **Feature branch / PR review**: Compare against the base branch using `git diff <base-branch>...HEAD` (e.g., `git diff main...HEAD`).
+
 Review changes along five critical dimensions:
 1. **Architecture & Boundaries**: Does this change violate layer separation or introduce cyclic dependencies?
 2. **Reliability & Edge Cases**: Are nullability, network timeouts, error handling, and resource leaks handled?
