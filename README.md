@@ -6,7 +6,7 @@ A standardized, production-grade customization pack for [Google Antigravity](htt
 
 ## 🏛 Architecture & Capabilities
 
-This pack packages deterministic safety hooks, universal software engineering rules, and on-demand procedural skills:
+This pack packages universal software engineering rules and on-demand procedural skills with zero runtime dependencies:
 
 ```mermaid
 flowchart TD
@@ -17,9 +17,8 @@ flowchart TD
     end
 
     subgraph Implementation["2. Implementation Loop"]
-        D --> E["Universal AGENTS.md (TDD, Minimal Blast Radius)"]
-        E --> F["hooks.json (PreToolUse Safety Interceptor)"]
-        F --> G["sdlc-root-cause-analysis (Hypothesis-Driven RCA)"]
+        D --> E["Universal AGENTS.md (TDD, Karpathy Principles, Live Verification)"]
+        E --> G["sdlc-root-cause-analysis (Hypothesis-Driven RCA)"]
     end
 
     subgraph Verification["3. Verification & Gating"]
@@ -43,17 +42,13 @@ flowchart TD
 
 ### 1. Universal Engineering Rules (`rules/AGENTS.md`)
 - **TDD Enforcement**: Business logic changes require tests. Zero assertion deletions.
-- **Surgical Changes**: Minimal blast radius; never reformats untouched code.
-- **Git & GitHub Discipline**: Conventional Commits format, `gh` CLI workflows.
+- **Surgical Changes & Karpathy Principles**: Simplicity First (YAGNI), Anti-Sycophancy (constructive pushback), No Drive-by Refactoring, and Empirical Verification.
+- **Epistemic Humility & Live Verification**: Search-first policy for fast-moving AI/developer ecosystems; never rely on stale memory for evolving CLI/IDE schemas.
+- **Git & GitHub Discipline**: Conventional Commits format, `gh` CLI workflows, explicit consent required for destructive commands.
 - **Hygiene & Safety**: Zero hardcoded secrets, `.gitignore` compliance.
 - **Persona Baseline**: Senior Staff Engineer & Google Antigravity / Agentic Systems Architect.
 
-### 2. Runtime Safety Guardrail (`hooks.json`)
-- Intercepts `run_command` tool calls in Antigravity via `PreToolUse`.
-- Blocks common catastrophic shell mistakes (`rm -rf /`, `rm -rf ~`, fork bombs, and force pushes to `main`/`master`, regardless of flag ordering) before execution.
-- *Security Note*: This hook serves as a behavioral guardrail (seatbelt) against accidental destructive commands; OS-level containment should always be enforced via Antigravity's Terminal Sandbox (`terminalSandbox: true`).
-
-### 3. Progressive SDLC Skills (`skills/`)
+### 2. Progressive SDLC Skills (`skills/`)
 All skills use progressive disclosure (0 token overhead until invoked):
 
 | Skill | Trigger Examples | What It Does |
