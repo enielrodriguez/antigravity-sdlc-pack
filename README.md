@@ -33,6 +33,7 @@ flowchart TD
 
     subgraph Advisory["Cross-Cutting Advisory"]
         L["agentic-ai-advisor (SOTA AI Systems Consulting)"]
+        M["sdlc-council (Multi-Agent Adversarial Debate)"]
     end
 ```
 
@@ -54,6 +55,7 @@ All skills use progressive disclosure (0 token overhead until invoked):
 | Skill | Trigger Examples | What It Does |
 | :--- | :--- | :--- |
 | `sdlc-spec-discovery` | *"I have an idea for..."* / *"Design this feature..."* | Generates PRD artifact, BDD Gherkin acceptance criteria, and Mermaid domain models. |
+| `sdlc-council` | *"Convene a council on X"* / *"Debate this architecture"* | Parallel read-only multi-agent debate (Architect, Pragmatist, Skeptic) with blind peer review and Chairman verdict. |
 | `sdlc-adr` | *"Create an ADR for choosing X"* / *"Document this decision"* | Standardized Nygard ADR (`docs/adr/NNNN-*.md`) preserving decision drivers and trade-offs. |
 | `sdlc-root-cause-analysis` | *"Debug this failure"* / *"Why is this test flaky?"* | Formulates minimal reproduction, tests multiple hypotheses, and applies surgical fixes. |
 | `sdlc-code-review` | *"Review my branch"* / *"Audit this PR"* | Pre-merge inspection across Architecture, Reliability, Security, and Performance. |
