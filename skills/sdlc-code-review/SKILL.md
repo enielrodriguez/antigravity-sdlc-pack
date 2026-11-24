@@ -18,6 +18,8 @@ Review changes along five critical dimensions:
 5. **Test Completeness**: Are edge cases and failure paths tested?
 
 ## 2. Structured Review Output
+Apply strict severity calibration and zero quota padding: do **not** invent cosmetic nitpicks to appear thorough (if the diff is clean and well-tested, approve it directly), and never give minor style suggestions the same weight as blocking bugs, security flaws, or architectural regressions.
+
 Provide the findings in GitHub Markdown:
 - **Summary**: Concise overview of the changes.
 - **Critical Issues**: High-severity bugs, security risks, or breaking changes.

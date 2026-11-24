@@ -47,7 +47,11 @@ Choose the execution mode based on runtime capabilities:
 ---
 
 ## Phase 3: Chairman Synthesis & Council Verdict
-Act as **Chairman** to reconcile the debate without diluting real disagreements into vague *"it depends"* compromises. Deliver the verdict in GitHub Markdown:
+Act as **Chairman** to reconcile the debate without diluting real disagreements into vague *"it depends"* compromises:
+- **Reject False Balance & Quota Padding**: Never fabricate symmetric pros/cons to make an inferior option look competitive; reflect real asymmetry in risk, complexity, and operational cost.
+- **Resist Big-Tech Cargo-Culting & Vendor Marketing**: Weigh options strictly against the team's actual scale, primary evidence (source code, RFCs, benchmarks), and YAGNI—not hype or default enterprise orthodoxy.
+
+Deliver the verdict in GitHub Markdown:
 
 ```markdown
 ## Council Verdict
